@@ -1,12 +1,34 @@
 import { FormEvent, useEffect, useState } from "react";
-import { newEventWs } from "../helper/objectFactories";
-import { EventWs } from "../helper/type";
+import { newEventWs, newUser } from "../helper/objectFactories";
+import { EventWs, UserAuth } from "../helper/type";
 
 const Home = () => {
   const [message, setMessage] = useState("");
   const [chatroom, setChatroom] = useState("general");
   const [inputChatroom, setInputChatroom] = useState("");
   const [conn, setConn] = useState<null | WebSocket>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [auth, setAuth] = useState<undefined | UserAuth>(undefined);
+  const [OTP, setOTP] = useState("")
+
+  const handleAuth = async (e:FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const authBody = {
+      username: username,
+      password: password,
+    };
+    const res = await fetch("http://localhost:3000/login", {
+      method: "POST",
+      body: JSON.stringify(authBody),
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      const user = newUser(username)
+      setOTP(data.otp)
+      setAuth(user);
+    }
+  };
 
   const routeEvent = (event: EventWs) => {
     if (event.type === undefined) {
@@ -55,24 +77,25 @@ const Home = () => {
   const isWebSocketSupported = "WebSocket" in window;
 
   useEffect(() => {
-    if (isWebSocketSupported && conn === null) {
+    console.log(OTP)
+    if (isWebSocketSupported && conn === null && auth !== undefined && OTP !== undefined) {
       console.log("new websocket");
-      setConn(() => new WebSocket("ws://localhost:3000/ws"));
+      setConn(() => new WebSocket(`ws://localhost:3000/ws?otp=${OTP}`));
     }
-    return ()=>{
-      conn?.close()
-    }
-  }, [conn, isWebSocketSupported]);
+    return () => {
+      conn?.close();
+    };
+  }, [conn, isWebSocketSupported, auth, OTP]);
 
   useEffect(() => {
     if (conn) {
       const handleMessage = (ev: MessageEvent) => {
         console.log(ev);
         if (ev.type === "ping") {
-         console.log("ping received")
+          console.log("ping received");
         }
         const eventData = JSON.parse(ev.data) as EventWs;
-        routeEvent(eventData)
+        routeEvent(eventData);
       };
       conn.onmessage = handleMessage;
       console.log("message");
@@ -94,6 +117,25 @@ const Home = () => {
   ) : (
     <div className="flex flex-col bg-white p-5">
       <h1 className="">Chatgo</h1>
+      <form action="" onSubmit={(e) => handleAuth(e)}>
+        <label htmlFor="username">Username</label>
+        <input
+          type="text"
+          name="username"
+          id="username"
+          onChange={(e) => setUsername(e.target.value)}
+          value={username}
+        />
+        <label htmlFor="password">Password</label>
+        <input
+          type="password"
+          name="password"
+          id="password"
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
+        />
+        <button type="submit">login</button>
+      </form>
       <h3>Currently in chat: {chatroom}</h3>
       <form
         action=""
