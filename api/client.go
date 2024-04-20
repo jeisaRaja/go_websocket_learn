@@ -37,7 +37,7 @@ func (c *Client) readMessages() {
 		log.Println(err)
 		return
 	}
-
+	c.connection.SetReadLimit(1024)
 	c.connection.SetPongHandler(c.pongHandler)
 
 	for {
