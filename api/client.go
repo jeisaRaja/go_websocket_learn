@@ -37,7 +37,8 @@ func (c *Client) readMessages() {
 		log.Println(err)
 		return
 	}
-	c.connection.SetReadLimit(1024)
+
+	c.connection.SetReadLimit(512)
 	c.connection.SetPongHandler(c.pongHandler)
 
 	for {
@@ -49,6 +50,7 @@ func (c *Client) readMessages() {
 			break
 		}
 		var request Event
+		log.Println(payload)
 		if err := json.Unmarshal(payload, &request); err != nil {
 			log.Println("error unmarshalling event")
 		}
@@ -91,7 +93,6 @@ func (c *Client) writeMessages() {
 				return
 			}
 		}
-
 	}
 }
 
