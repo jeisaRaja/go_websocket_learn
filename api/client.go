@@ -17,7 +17,7 @@ type Client struct {
 }
 
 var (
-	pongWait     = 100 * time.Second
+	pongWait     = 10 * time.Second
 	pingInterval = 5 * time.Second
 )
 
@@ -61,6 +61,7 @@ func (c *Client) readMessages() {
 func (c *Client) writeMessages() {
 	ticker := time.NewTicker(pingInterval)
 	defer func() {
+		log.Println(c.manager.clients)
 		ticker.Stop()
 		c.manager.removeClient(c)
 	}()
@@ -87,8 +88,8 @@ func (c *Client) writeMessages() {
 			log.Println("ping")
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
 				log.Println("write message error ", err)
+				return
 			}
-			return
 		}
 
 	}
