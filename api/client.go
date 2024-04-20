@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -11,12 +13,19 @@ type ClientList map[*Client]bool
 type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
+	egress     chan Event
 }
+
+var (
+	pongWait     = 100 * time.Second
+	pingInterval = 5 * time.Second
+)
 
 func NewClient(ws *websocket.Conn, manager *Manager) *Client {
 	return &Client{
 		connection: ws,
 		manager:    manager,
+		egress:     make(chan Event),
 	}
 }
 
@@ -24,14 +33,68 @@ func (c *Client) readMessages() {
 	defer func() {
 		c.manager.removeClient(c)
 	}()
+	if err := c.connection.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+		log.Println(err)
+		return
+	}
+
+	c.connection.SetPongHandler(c.pongHandler)
+
 	for {
-		messageType, payload, err := c.connection.ReadMessage()
+		_, payload, err := c.connection.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				break
+				log.Printf("error reading message: %v", err)
 			}
+			break
 		}
-		log.Println(messageType)
-		log.Println(string(payload))
+		var request Event
+		if err := json.Unmarshal(payload, &request); err != nil {
+			log.Println("error unmarshalling event")
+		}
+		if err := c.manager.routeEvent(request, c); err != nil {
+			log.Println("Error handling route event", err)
+		}
 	}
+}
+
+func (c *Client) writeMessages() {
+	ticker := time.NewTicker(pingInterval)
+	defer func() {
+		ticker.Stop()
+		c.manager.removeClient(c)
+	}()
+
+	for {
+		select {
+		case message, ok := <-c.egress:
+			if !ok {
+				if err := c.connection.WriteMessage(websocket.CloseMessage, nil); err != nil {
+					log.Println("connection closed: ", err)
+				}
+				return
+			}
+			data, err := json.Marshal(message)
+			if err != nil {
+				log.Println(err)
+			}
+			if err := c.connection.WriteMessage(websocket.TextMessage, data); err != nil {
+				log.Println(err)
+			}
+			log.Println("sent message")
+
+		case <-ticker.C:
+			log.Println("ping")
+			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {
+				log.Println("write message error ", err)
+			}
+			return
+		}
+
+	}
+}
+
+func (c *Client) pongHandler(pongMsg string) error {
+	log.Println("pong")
+	return c.connection.SetReadDeadline(time.Now().Add(pongWait))
 }
