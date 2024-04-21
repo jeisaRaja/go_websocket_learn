@@ -1,6 +1,9 @@
 export type EventWs = {
   type: string
-  payload: string | number
+  payload: {
+    message: string
+    from: string
+  }
 }
 
 export type UserAuth = {

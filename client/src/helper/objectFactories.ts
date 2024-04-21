@@ -1,8 +1,8 @@
 import { EventWs, UserAuth } from "./type";
 
-export function newEventWs(type: string, payload: string): EventWs {
+export function newEventWs(type: string, message: string, from: string): EventWs {
   return {
-    type, payload
+    type, payload: { message, from }
   }
 }
 
