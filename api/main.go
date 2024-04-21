@@ -13,7 +13,7 @@ type UserAuth struct {
 
 func main() {
 	setupAPI()
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	log.Fatal(http.ListenAndServeTLS(":3000", "server.crt", "server.key", nil))
 }
 
 func setupAPI() {
