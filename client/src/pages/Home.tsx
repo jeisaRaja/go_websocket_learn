@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { newEventWs, newUser } from "../helper/objectFactories";
 import { EventWs, UserAuth } from "../helper/type";
 
 const Home = () => {
+  const textArea = useRef<HTMLTextAreaElement|null>(null)
   const [message, setMessage] = useState("");
   const [chatroom, setChatroom] = useState("general");
   const [inputChatroom, setInputChatroom] = useState("");
@@ -18,7 +19,7 @@ const Home = () => {
       username: username,
       password: password,
     };
-    const res = await fetch("http://localhost:3000/login", {
+    const res = await fetch("https://localhost:3000/login", {
       method: "POST",
       body: JSON.stringify(authBody),
     });
@@ -31,12 +32,17 @@ const Home = () => {
   };
 
   const routeEvent = (event: EventWs) => {
+    console.log(event)
     if (event.type === undefined) {
       return;
     }
     switch (event.type) {
       case "new_message":
-        console.log("new_message");
+        console.log("new_message", event.payload);
+        if(textArea.current){
+          const currVal = textArea.current.value
+          textArea.current.value = currVal + "\n" + event.payload.message
+        }
         break;
       default:
         console.log("unsupported message type");
@@ -44,17 +50,18 @@ const Home = () => {
     }
   };
 
-  const sendMessage = (type: string, payload: string) => {
+  const sendMessage = (type: string, message: string) => {
     if (!conn) {
       return;
     }
-    const eventData = newEventWs(type, payload);
-    conn.send(JSON.stringify(eventData));
+    const eventData = newEventWs(type, message, username);
+    const jsonData = JSON.stringify(eventData)
+    console.log(jsonData)
+    conn.send(jsonData);
   };
 
   const onMessageSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(message);
     if (message === "") {
       return;
     }
@@ -80,7 +87,7 @@ const Home = () => {
     console.log(OTP)
     if (isWebSocketSupported && conn === null && auth !== undefined && OTP !== undefined) {
       console.log("new websocket");
-      setConn(() => new WebSocket(`ws://localhost:3000/ws?otp=${OTP}`));
+      setConn(() => new WebSocket(`wss://localhost:3000/ws?otp=${OTP}`));
     }
     return () => {
       conn?.close();
@@ -166,6 +173,7 @@ const Home = () => {
         placeholder="welcome to chatgo"
         readOnly
         className="p-3"
+        ref={textArea}
       ></textarea>
 
       <form
