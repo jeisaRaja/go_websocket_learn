@@ -14,6 +14,7 @@ type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
 	egress     chan Event
+	chatroom   string
 }
 
 var (
@@ -26,6 +27,7 @@ func NewClient(ws *websocket.Conn, manager *Manager) *Client {
 		connection: ws,
 		manager:    manager,
 		egress:     make(chan Event),
+		chatroom:   "general",
 	}
 }
 

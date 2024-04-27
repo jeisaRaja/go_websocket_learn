@@ -3,7 +3,7 @@ import { newEventWs, newUser } from "../helper/objectFactories";
 import { EventWs, UserAuth } from "../helper/type";
 
 const Home = () => {
-  const textArea = useRef<HTMLTextAreaElement|null>(null)
+  const textArea = useRef<HTMLTextAreaElement | null>(null);
   const [message, setMessage] = useState("");
   const [chatroom, setChatroom] = useState("general");
   const [inputChatroom, setInputChatroom] = useState("");
@@ -11,10 +11,10 @@ const Home = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [auth, setAuth] = useState<undefined | UserAuth>(undefined);
-  const [OTP, setOTP] = useState("")
+  const [OTP, setOTP] = useState("");
 
-  const handleAuth = async (e:FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleAuth = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const authBody = {
       username: username,
       password: password,
@@ -25,23 +25,23 @@ const Home = () => {
     });
     if (res.status === 200) {
       const data = await res.json();
-      const user = newUser(username)
-      setOTP(data.otp)
+      const user = newUser(username);
+      setOTP(data.otp);
       setAuth(user);
     }
   };
 
   const routeEvent = (event: EventWs) => {
-    console.log(event)
+    console.log(event);
     if (event.type === undefined) {
       return;
     }
     switch (event.type) {
       case "new_message":
         console.log("new_message", event.payload);
-        if(textArea.current){
-          const currVal = textArea.current.value
-          textArea.current.value = currVal + "\n" + event.payload.message
+        if (textArea.current) {
+          const currVal = textArea.current.value;
+          textArea.current.value = currVal + "\n" + event.payload.message;
         }
         break;
       default:
@@ -55,8 +55,8 @@ const Home = () => {
       return;
     }
     const eventData = newEventWs(type, message, username);
-    const jsonData = JSON.stringify(eventData)
-    console.log(jsonData)
+    const jsonData = JSON.stringify(eventData);
+    console.log(jsonData);
     conn.send(jsonData);
   };
 
@@ -77,6 +77,10 @@ const Home = () => {
     if (!inputChatroom || chatroom == inputChatroom) {
       return false;
     }
+    if(!conn){
+      return;
+    }
+    sendMessage("change_room", inputChatroom)
     setChatroom(inputChatroom);
     setInputChatroom("");
   };
@@ -84,8 +88,13 @@ const Home = () => {
   const isWebSocketSupported = "WebSocket" in window;
 
   useEffect(() => {
-    console.log(OTP)
-    if (isWebSocketSupported && conn === null && auth !== undefined && OTP !== undefined) {
+    console.log(OTP);
+    if (
+      isWebSocketSupported &&
+      conn === null &&
+      auth !== undefined &&
+      OTP !== undefined
+    ) {
       console.log("new websocket");
       setConn(() => new WebSocket(`wss://localhost:3000/ws?otp=${OTP}`));
     }
@@ -107,8 +116,7 @@ const Home = () => {
       conn.onmessage = handleMessage;
       console.log("message");
       return () => {
-        conn.onmessage = null; // Cleanup when component unmounts or conn changes
-      };
+        conn.onmessage = null;       };
     }
   }, [conn]);
 
