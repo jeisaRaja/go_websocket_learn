@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"jeisaraja/websocket_learn/models"
 	"time"
 )
 
@@ -19,8 +20,7 @@ const (
 )
 
 type SendMessageEvent struct {
-	Message string `json:"message"`
-	From    string `json:"from"`
+	models.Chat
 }
 
 type NewMessageEvent struct {
