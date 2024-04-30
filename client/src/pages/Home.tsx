@@ -41,7 +41,12 @@ const Home = () => {
         console.log("new_message", event.payload);
         if (textArea.current) {
           const currVal = textArea.current.value;
-          textArea.current.value = currVal + "\n" + event.payload.message;
+          textArea.current.value =
+            currVal +
+            "\n" +
+            event.payload.message +
+            " \n -" +
+            event.payload.from;
         }
         break;
       default:
@@ -77,10 +82,10 @@ const Home = () => {
     if (!inputChatroom || chatroom == inputChatroom) {
       return false;
     }
-    if(!conn){
+    if (!conn) {
       return;
     }
-    sendMessage("change_room", inputChatroom)
+    sendMessage("change_room", inputChatroom);
     setChatroom(inputChatroom);
     setInputChatroom("");
   };
@@ -116,7 +121,8 @@ const Home = () => {
       conn.onmessage = handleMessage;
       console.log("message");
       return () => {
-        conn.onmessage = null;       };
+        conn.onmessage = null;
+      };
     }
   }, [conn]);
 
@@ -132,7 +138,7 @@ const Home = () => {
   ) : (
     <div className="flex flex-col bg-white p-5">
       <h1 className="">Chatgo</h1>
-      <form action="" onSubmit={(e) => handleAuth(e)}>
+      <form action="" className="flex gap-3" onSubmit={(e) => handleAuth(e)}>
         <label htmlFor="username">Username</label>
         <input
           type="text"
@@ -140,6 +146,7 @@ const Home = () => {
           id="username"
           onChange={(e) => setUsername(e.target.value)}
           value={username}
+          className="border border-grey-200 p-2"
         />
         <label htmlFor="password">Password</label>
         <input
@@ -148,6 +155,7 @@ const Home = () => {
           id="password"
           onChange={(e) => setPassword(e.target.value)}
           value={password}
+          className="border border-grey-200 p-2"
         />
         <button type="submit">login</button>
       </form>
