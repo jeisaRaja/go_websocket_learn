@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,13 +36,15 @@ type Manager struct {
 	handlers map[string]EventHandler
 	sync.RWMutex
 	otps OTPMap
+	DB   *sql.DB
 }
 
-func NewManager(ctx context.Context) *Manager {
+func NewManager(ctx context.Context, db *sql.DB) *Manager {
 	m := &Manager{
 		clients:  make(ClientList),
 		handlers: make(map[string]EventHandler),
 		otps:     NewOTPMap(ctx, 20*time.Second),
+    DB: db,
 	}
 	m.setupEventHandlers()
 	return m
