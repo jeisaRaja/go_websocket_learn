@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -26,11 +27,6 @@ var (
 	}
 )
 
-const (
-	username = "testing"
-	password = "password"
-)
-
 type Manager struct {
 	clients  ClientList
 	handlers map[string]EventHandler
@@ -44,7 +40,7 @@ func NewManager(ctx context.Context, db *sql.DB) *Manager {
 		clients:  make(ClientList),
 		handlers: make(map[string]EventHandler),
 		otps:     NewOTPMap(ctx, 20*time.Second),
-    DB: db,
+		DB:       db,
 	}
 	m.setupEventHandlers()
 	return m
@@ -141,6 +137,24 @@ func (m *Manager) routeEvent(event Event, c *Client) error {
 	} else {
 		return errors.New("there is no such event type")
 	}
+}
+
+func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
+	var reqBody = UserAuth{}
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+	}
+	if len(reqBody.Username) < 4 {
+		http.Error(w, "Username must be at least 4 characters long", 400)
+	}
+  if len(reqBody.Password) < 8 {
+    http.Error(w, "Passowrd must be at least 8 characters long", 400)
+  }
+  
+  userID := uuid.New()
+  createdAt := time.Now()
+  query := "INSERT INTO users (id, username, password, created_at) VALUES "
 }
 
 func (m *Manager) login(w http.ResponseWriter, r *http.Request) {
