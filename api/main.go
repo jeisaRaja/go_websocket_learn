@@ -5,17 +5,13 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"jeisaraja/websocket_learn/database"
 	"log"
 	"net/http"
 	"time"
 
 	_ "github.com/lib/pq"
 )
-
-type UserAuth struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 type config struct {
 	port int
@@ -37,6 +33,7 @@ func main() {
 
 func setupAPI(cfg *config) {
 
+	var Queries = database.Queries{}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	db, err := connectDB(cfg, ctx)
@@ -45,7 +42,8 @@ func setupAPI(cfg *config) {
 		log.Fatal(err.Error())
 	}
 
-	manager := NewManager(ctx, db)
+	Queries.DB = db
+	manager := NewManager(ctx, &Queries)
 	defer db.Close()
 	fmt.Printf("database connection pool established")
 	http.Handle("/", http.FileServer(http.Dir("../client")))

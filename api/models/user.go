@@ -22,6 +22,12 @@ type password struct {
 	hash      []byte
 }
 
+type AuthSignup struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func (p *password) Set(plaintext string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plaintext), 10)
 	if err != nil {
@@ -43,4 +49,8 @@ func (p *password) Match(plaintext string) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (p *password) GetHash() []byte {
+	return p.hash
 }

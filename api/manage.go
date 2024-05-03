@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"jeisaraja/websocket_learn/database"
+	"jeisaraja/websocket_learn/models"
 	"log"
 	"net/http"
 	"sync"
@@ -32,10 +33,10 @@ type Manager struct {
 	handlers map[string]EventHandler
 	sync.RWMutex
 	otps OTPMap
-	DB   *sql.DB
+	DB   *database.Queries
 }
 
-func NewManager(ctx context.Context, db *sql.DB) *Manager {
+func NewManager(ctx context.Context, db *database.Queries) *Manager {
 	m := &Manager{
 		clients:  make(ClientList),
 		handlers: make(map[string]EventHandler),
@@ -140,7 +141,7 @@ func (m *Manager) routeEvent(event Event, c *Client) error {
 }
 
 func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
-	var reqBody = UserAuth{}
+	var reqBody = models.AuthSignup{}
 	err := json.NewDecoder(r.Body).Decode(&reqBody)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
@@ -148,13 +149,27 @@ func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
 	if len(reqBody.Username) < 4 {
 		http.Error(w, "Username must be at least 4 characters long", 400)
 	}
-  if len(reqBody.Password) < 8 {
-    http.Error(w, "Passowrd must be at least 8 characters long", 400)
-  }
-  
-  userID := uuid.New()
-  createdAt := time.Now()
-  query := "INSERT INTO users (id, username, password, created_at) VALUES "
+	if len(reqBody.Password) < 8 {
+		http.Error(w, "Password must be at least 8 characters long", 400)
+	}
+	if len(reqBody.Email) < 8 {
+		http.Error(w, "Email must be at least 8 characters long", 400)
+	}
+
+	var user = models.User{}
+	user.ID = uuid.New()
+	user.Username = reqBody.Username
+
+	err = user.Password.Set(reqBody.Password)
+	if err != nil {
+		http.Error(w, "something went wrong", 500)
+	}
+	user.Email = reqBody.Email
+
+	err = m.DB.CreateUser(&user)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+	}
 }
 
 func (m *Manager) login(w http.ResponseWriter, r *http.Request) {
