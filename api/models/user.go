@@ -28,6 +28,11 @@ type AuthSignup struct {
 	Password string `json:"password"`
 }
 
+type AuthSignin struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
 func (p *password) Set(plaintext string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plaintext), 10)
 	if err != nil {

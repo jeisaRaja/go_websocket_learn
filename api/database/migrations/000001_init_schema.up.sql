@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS chats (
     id UUID PRIMARY KEY,
     message TEXT NOT NULL,
     room VARCHAR(255) DEFAULT 'general',
-    from UUID NOT NULL,
+    from_user UUID NOT NULL,
     sent TIME DEFAULT CURRENT_TIME,
-    FOREIGN KEY (from) REFERENCES users(id)
+    FOREIGN KEY (from_user) REFERENCES users(id)
 );
+
+CREATE INDEX chatroom ON chats (room);

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -12,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -32,16 +34,19 @@ type Manager struct {
 	clients  ClientList
 	handlers map[string]EventHandler
 	sync.RWMutex
-	otps OTPMap
-	DB   *database.Queries
+	otps     OTPMap
+	DB       *database.Queries
+	Validate *validator.Validate
 }
 
 func NewManager(ctx context.Context, db *database.Queries) *Manager {
+	validate := validator.New()
 	m := &Manager{
 		clients:  make(ClientList),
 		handlers: make(map[string]EventHandler),
 		otps:     NewOTPMap(ctx, 20*time.Second),
 		DB:       db,
+		Validate: validate,
 	}
 	m.setupEventHandlers()
 	return m
@@ -145,15 +150,19 @@ func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&reqBody)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
+		return
 	}
 	if len(reqBody.Username) < 4 {
 		http.Error(w, "Username must be at least 4 characters long", 400)
+		return
 	}
 	if len(reqBody.Password) < 8 {
 		http.Error(w, "Password must be at least 8 characters long", 400)
+		return
 	}
 	if len(reqBody.Email) < 8 {
 		http.Error(w, "Email must be at least 8 characters long", 400)
+		return
 	}
 
 	var user = models.User{}
@@ -163,23 +172,35 @@ func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
 	err = user.Password.Set(reqBody.Password)
 	if err != nil {
 		http.Error(w, "something went wrong", 500)
+		return
 	}
 	user.Email = reqBody.Email
 
 	err = m.DB.CreateUser(&user)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
+		return
 	}
 }
 
 func (m *Manager) login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	var reqBody = UserAuth{}
+	var reqBody = models.AuthSignin{}
 	err := json.NewDecoder(r.Body).Decode(&reqBody)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		return
 	}
-	if reqBody.Username == username && reqBody.Password == password {
+
+	err = m.Validate.Struct(reqBody)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	password := m.DB.GetUserPassword(reqBody.Username)
+
+	if bytes.Equal([]byte(reqBody.Password), *password) {
 		type response struct {
 			OTP string `json:"otp"`
 		}
@@ -197,6 +218,7 @@ func (m *Manager) login(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Not authorized!"))
 		return
 	}
 }

@@ -25,10 +25,11 @@ func main() {
 	var cfg config
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development | staging | production)")
-	flag.StringVar(&cfg.db.dsn, "dh-dsn", "postgres://go_websocket_learn:secret@localhost/go_websocket_learn", "DB connection string")
+	flag.StringVar(&cfg.db.dsn, "dh-dsn", "postgres://chat_ws:password@localhost/chat_ws", "DB connection string")
 	flag.Parse()
 	setupAPI(&cfg)
-	log.Fatal(http.ListenAndServeTLS(":3000", "server.crt", "server.key", nil))
+	log.Println("Listening on port 5000")
+	log.Fatal(http.ListenAndServe(":5000", nil))
 }
 
 func setupAPI(cfg *config) {
@@ -46,9 +47,10 @@ func setupAPI(cfg *config) {
 	manager := NewManager(ctx, &Queries)
 	defer db.Close()
 	fmt.Printf("database connection pool established")
-	http.Handle("/", http.FileServer(http.Dir("../client")))
+	http.HandleFunc("/", handleNotFound)
 	http.HandleFunc("/ws", manager.serveWs)
 	http.HandleFunc("/login", manager.login)
+	http.HandleFunc("/signup", manager.signup)
 }
 
 func connectDB(cfg *config, ctx context.Context) (*sql.DB, error) {
@@ -61,4 +63,10 @@ func connectDB(cfg *config, ctx context.Context) (*sql.DB, error) {
 		return nil, err
 	}
 	return db, nil
+}
+
+func handleNotFound(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+	msg := "Nothing found"
+	w.Write([]byte(msg))
 }
