@@ -98,24 +98,22 @@ func (m *Manager) setupEventHandlers() {
 }
 
 func sendMessage(event Event, c *Client) error {
-	var msgEvent SendMessageEvent
+	var msgEvent models.Chat
 	log.Println(event)
 	if err := json.Unmarshal(event.Payload, &msgEvent); err != nil {
 		return fmt.Errorf("bad payload: %v", err)
 	}
 
-	err := c.manager.DB.InsertChat(&msgEvent.Chat)
+	msgEvent.Room = c.chatroom
+	msgEvent.Sent = time.Now()
+	err := c.manager.DB.InsertChat(&msgEvent)
+
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
 	}
 
-	var msg NewMessageEvent
-	msg.Sent = time.Now()
-	msg.From = msgEvent.From
-	msg.Message = msgEvent.Message
-
-	data, err := json.Marshal(msg)
+	data, err := json.Marshal(msgEvent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal broadcast message: %v", err)
 	}
