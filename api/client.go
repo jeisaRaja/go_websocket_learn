@@ -85,8 +85,6 @@ func (c *Client) writeMessages() {
 			if err := c.connection.WriteMessage(websocket.TextMessage, data); err != nil {
 				log.Println(err)
 			}
-			log.Println("sending message")
-
 		case <-ticker.C:
 			log.Println("ping")
 			if err := c.connection.WriteMessage(websocket.PingMessage, []byte(``)); err != nil {

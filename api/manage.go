@@ -103,6 +103,13 @@ func sendMessage(event Event, c *Client) error {
 	if err := json.Unmarshal(event.Payload, &msgEvent); err != nil {
 		return fmt.Errorf("bad payload: %v", err)
 	}
+
+	err := c.manager.DB.InsertChat(&msgEvent.Chat)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
 	var msg NewMessageEvent
 	msg.Sent = time.Now()
 	msg.From = msgEvent.From
