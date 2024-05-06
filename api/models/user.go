@@ -23,14 +23,16 @@ type password struct {
 }
 
 type AuthSignup struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Username      string   `json:"username"`
+	Email         string   `json:"email"`
+	InputPassword string   `json:"password"`
+	Password      password `json:"-"`
 }
 
 type AuthSignin struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Username      string   `json:"username" validate:"required"`
+	InputPassword string   `json:"password"`
+	Password      password `json:"-"`
 }
 
 func (p *password) Set(plaintext string) error {

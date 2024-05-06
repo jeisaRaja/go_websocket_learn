@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -157,7 +156,7 @@ func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Username must be at least 4 characters long", 400)
 		return
 	}
-	if len(reqBody.Password) < 8 {
+	if len(reqBody.InputPassword) < 8 {
 		http.Error(w, "Password must be at least 8 characters long", 400)
 		return
 	}
@@ -170,7 +169,7 @@ func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
 	user.ID = uuid.New()
 	user.Username = reqBody.Username
 
-	err = user.Password.Set(reqBody.Password)
+	err = user.Password.Set(reqBody.InputPassword)
 	if err != nil {
 		http.Error(w, "something went wrong", 500)
 		return
@@ -215,12 +214,14 @@ func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
 func (m *Manager) login(w http.ResponseWriter, r *http.Request) {
 	var reqBody = models.AuthSignin{}
 	err := json.NewDecoder(r.Body).Decode(&reqBody)
+
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
 	err = m.Validate.Struct(reqBody)
+
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Error(w, err.Error(), 500)
@@ -229,21 +230,34 @@ func (m *Manager) login(w http.ResponseWriter, r *http.Request) {
 
 	password := m.DB.GetUserPassword(reqBody.Username)
 
-	if bytes.Equal([]byte(reqBody.Password), *password) {
+	if password == nil {
+		http.Error(w, "User does not exists", 400)
+		return
+	}
+	valid, err := ComparePasswords(*password, reqBody.InputPassword)
+	if err != nil {
+		http.Error(w, "User does not exists", 400)
+		return
+	}
+
+	if valid {
 		type response struct {
 			OTP string `json:"otp"`
 		}
 		otp := m.otps.NewOTP()
-		resp := response{
-			OTP: otp.Key,
+		res := models.Response{
+			Error: "",
+			Msg:   "Login Successful.",
+			Data:  map[string]string{"otp": otp.Key},
 		}
-		data, err := json.Marshal(resp)
+		jsonRes, err := json.Marshal(res)
 		if err != nil {
-			log.Println(err)
+			http.Error(w, err.Error(), 500)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+		w.Write(jsonRes)
 		return
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)

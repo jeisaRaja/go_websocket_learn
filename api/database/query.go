@@ -2,8 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"jeisaraja/websocket_learn/models"
-
 )
 
 type Queries struct {
@@ -20,12 +20,13 @@ func (q *Queries) CreateUser(u *models.User) error {
 }
 
 func (q *Queries) GetUserPassword(username string) *[]byte {
-	query := "SELECT password FROM users WHERE id = $1"
+	query := "SELECT password FROM users WHERE username = $1"
 	row := q.DB.QueryRow(query, username)
 
 	var password []byte
 	err := row.Scan(&password)
 	if err == sql.ErrNoRows {
+		fmt.Println("No row found")
 		return nil
 	}
 	return &password
