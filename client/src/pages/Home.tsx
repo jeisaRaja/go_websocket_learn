@@ -25,7 +25,7 @@ const Home = () => {
     });
     if (res.status === 200) {
       const resData = await res.json();
-      console.log(resData)
+      alert(resData);
       const user = newUser(username);
       setOTP(resData.data.otp);
       setAuth(user);
