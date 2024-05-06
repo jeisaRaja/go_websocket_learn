@@ -19,14 +19,15 @@ const Home = () => {
       username: username,
       password: password,
     };
-    const res = await fetch("https://localhost:3000/login", {
+    const res = await fetch("http://localhost:5000/login", {
       method: "POST",
       body: JSON.stringify(authBody),
     });
     if (res.status === 200) {
-      const data = await res.json();
+      const resData = await res.json();
+      console.log(resData)
       const user = newUser(username);
-      setOTP(data.otp);
+      setOTP(resData.data.otp);
       setAuth(user);
     }
   };
@@ -93,7 +94,6 @@ const Home = () => {
   const isWebSocketSupported = "WebSocket" in window;
 
   useEffect(() => {
-    console.log(OTP);
     if (
       isWebSocketSupported &&
       conn === null &&
@@ -101,7 +101,7 @@ const Home = () => {
       OTP !== undefined
     ) {
       console.log("new websocket");
-      setConn(() => new WebSocket(`wss://localhost:3000/ws?otp=${OTP}`));
+      setConn(() => new WebSocket(`ws://localhost:5000/ws?otp=${OTP}`));
     }
     return () => {
       conn?.close();
@@ -111,7 +111,6 @@ const Home = () => {
   useEffect(() => {
     if (conn) {
       const handleMessage = (ev: MessageEvent) => {
-        console.log(ev);
         if (ev.type === "ping") {
           console.log("ping received");
         }
