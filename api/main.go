@@ -23,30 +23,31 @@ type config struct {
 
 func main() {
 	var cfg config
-	flag.IntVar(&cfg.port, "port", 4000, "API server port")
+	flag.IntVar(&cfg.port, "port", 5000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development | staging | production)")
 	flag.StringVar(&cfg.db.dsn, "dh-dsn", "postgres://chat_ws:password@localhost/chat_ws", "DB connection string")
 	flag.Parse()
-	setupAPI(&cfg)
-	log.Println("Listening on port 5000")
-	log.Fatal(http.ListenAndServe(":5000", nil))
-}
 
-func setupAPI(cfg *config) {
-
-	var Queries = database.Queries{}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	db, err := connectDB(cfg, ctx)
+	var Queries = database.Queries{}
 
+	db, err := connectDB(&cfg, ctx)
+	defer db.Close()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	Queries.DB = db
+	defer cancel()
+
 	manager := NewManager(ctx, &Queries)
-	defer db.Close()
-	fmt.Printf("database connection pool established")
+	setupAPI(manager)
+	log.Printf("Listening on port %d", cfg.port)
+	port := fmt.Sprintf(":%d", cfg.port)
+	log.Fatal(http.ListenAndServe(port, nil))
+}
+
+func setupAPI(manager *Manager) {
 	http.HandleFunc("/", handleNotFound)
 	http.HandleFunc("/ws", manager.serveWs)
 	http.HandleFunc("/login", manager.login)
@@ -62,6 +63,8 @@ func connectDB(cfg *config, ctx context.Context) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("database connection pool established")
 	return db, nil
 }
 

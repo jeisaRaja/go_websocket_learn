@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -181,6 +182,34 @@ func (m *Manager) signup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	jwtKey := []byte("JWT_KEY")
+	tokenStr, err := token.SignedString(jwtKey)
+
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	res := models.Response{
+		Error: "",
+		Msg:   "Account Created.",
+		Data:  map[string]string{"token": tokenStr},
+	}
+
+	jsonRes, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(jsonRes)
 }
 
 func (m *Manager) login(w http.ResponseWriter, r *http.Request) {
