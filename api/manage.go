@@ -71,8 +71,26 @@ func (m *Manager) serveWs(w http.ResponseWriter, r *http.Request) {
 	client := NewClient(conn, m)
 	m.addClient(client)
 
+	chats, err := m.DB.LoadChats("general")
+	fmt.Println(chats)
+	if err != nil {
+		return
+	}
+
 	go client.readMessages()
 	go client.writeMessages()
+
+	for _, chat := range chats {
+		jsonChat, err := json.Marshal(chat)
+		if err != nil {
+			return
+		}
+		var sendEvent Event
+		sendEvent.Payload = jsonChat
+		sendEvent.Type = EventNewMessage
+
+		client.egress <- sendEvent
+	}
 }
 
 func (m *Manager) addClient(client *Client) {
@@ -99,7 +117,6 @@ func (m *Manager) setupEventHandlers() {
 
 func sendMessage(event Event, c *Client) error {
 	var msgEvent models.Chat
-	log.Println(event)
 	if err := json.Unmarshal(event.Payload, &msgEvent); err != nil {
 		return fmt.Errorf("bad payload: %v", err)
 	}

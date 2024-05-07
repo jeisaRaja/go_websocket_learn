@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"jeisaraja/websocket_learn/models"
-
-	"github.com/google/uuid"
 )
 
 type Queries struct {
@@ -67,6 +65,7 @@ func (q *Queries) LoadChats(room string) ([]models.Chat, error) {
 	if err != nil {
 		return chats, err
 	}
+	defer result.Close()
 	for result.Next() {
 		var chat models.Chat
 		if err := result.Scan(&chat.ID, &chat.Message, &chat.From, &chat.Sent, &chat.From); err != nil {
