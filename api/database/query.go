@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"jeisaraja/websocket_learn/models"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -41,8 +40,7 @@ func (q *Queries) InsertChat(chat *models.Chat) error {
 	if err != nil {
 		return err
 	}
-	id := uuid.New()
-	_, err = q.DB.Exec(query, id, chat.Message, chat.Room, fromID, chat.Sent)
+	_, err = q.DB.Exec(query, chat.ID, chat.Message, chat.Room, fromID, chat.Sent)
 	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println(query)
@@ -60,4 +58,22 @@ func (q *Queries) GetUserID(username string) (string, error) {
 		return "", err
 	}
 	return uname, nil
+}
+
+func (q *Queries) LoadChats(room string) ([]models.Chat, error) {
+	query := "SELECT id, message, from_user, sent, room FROM chats WHERE room = $1"
+	var chats []models.Chat
+	result, err := q.DB.Query(query, room)
+	if err != nil {
+		return chats, err
+	}
+	for result.Next() {
+		var chat models.Chat
+		if err := result.Scan(&chat.ID, &chat.Message, &chat.From, &chat.Sent, &chat.From); err != nil {
+			fmt.Println("Error when scanning row: ", err)
+			return chats, err
+		}
+		chats = append(chats, chat)
+	}
+	return chats, nil
 }

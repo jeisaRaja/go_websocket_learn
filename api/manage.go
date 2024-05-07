@@ -106,6 +106,7 @@ func sendMessage(event Event, c *Client) error {
 
 	msgEvent.Room = c.chatroom
 	msgEvent.Sent = time.Now()
+	msgEvent.ID = uuid.New()
 	err := c.manager.DB.InsertChat(&msgEvent)
 
 	if err != nil {
