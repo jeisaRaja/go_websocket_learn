@@ -1,5 +1,9 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { newEventWs, newUser } from "../helper/objectFactories";
+import {
+  newChangeRoomWs,
+  newEventWs,
+  newUser,
+} from "../helper/objectFactories";
 import { Chat as ChatType, EventWs, UserAuth } from "../helper/type";
 import { scrollToBottom } from "../helper/autoScroll";
 import Chat from "../components/Chat";
@@ -62,9 +66,21 @@ const Home = () => {
     if (!conn) {
       return;
     }
-    const eventData = newEventWs(type, message, chatroom, username);
-    const jsonData = JSON.stringify(eventData);
-    conn.send(jsonData);
+    switch (type) {
+      case "change_room": {
+        const eventData = newChangeRoomWs(inputChatroom);
+        const jsonData = JSON.stringify(eventData);
+        conn.send(jsonData);
+        break;
+      }
+      default: {
+        const eventData = newEventWs(type, message, chatroom, username);
+        const jsonData = JSON.stringify(eventData);
+        console.log(jsonData);
+        conn.send(jsonData);
+        break;
+      }
+    }
   };
 
   const onMessageSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -82,12 +98,13 @@ const Home = () => {
   const onChangeChatroom = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputChatroom || chatroom == inputChatroom) {
-      return false;
+      return;
     }
     if (!conn) {
       return;
     }
     sendMessage("change_room", inputChatroom);
+    setMessages([])
     setChatroom(inputChatroom);
     setInputChatroom("");
   };
@@ -119,7 +136,6 @@ const Home = () => {
         //if (ev.type === "ping") {
         // console.log("ping received");
         //}
-        console.log(ev.data);
         const eventData = JSON.parse(ev.data) as EventWs;
         routeEvent(eventData);
       };

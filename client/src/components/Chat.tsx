@@ -10,10 +10,12 @@ export default function Chat({ msg, uname, sent }: ChatProps) {
   const year = sentDate.getFullYear();
 
   return (
-    <div className="chat-element">
-      <div className="message">{msg}</div>
-      <div className="username">{uname}</div>
-      <div className="time">{`${day}/${month}/${year}`}</div>
+    <div className="chat-element w-full flex flex-col my-3">
+      <div className="message bg-slate-200 p-3 rounded-md">{msg}</div>
+      <div className="flex gap-3 px-3">
+        <div className="username">{uname}</div>
+        <div className="time">{`${day}/${month}/${year}`}</div>
+      </div>
     </div>
   );
 }

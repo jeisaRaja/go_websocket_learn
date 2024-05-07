@@ -72,7 +72,6 @@ func (m *Manager) serveWs(w http.ResponseWriter, r *http.Request) {
 	m.addClient(client)
 
 	chats, err := m.DB.LoadChats("general")
-	fmt.Println(chats)
 	if err != nil {
 		return
 	}
@@ -156,8 +155,10 @@ func changeRoom(event Event, c *Client) error {
 		return fmt.Errorf("bad payload")
 	}
 
+	fmt.Println(roomEvent)
+	c.chatroom = roomEvent.Room
+
 	chats, err := c.manager.DB.LoadChats(roomEvent.Room)
-	fmt.Println(chats)
 	if err != nil {
 		return err
 	}
@@ -173,8 +174,6 @@ func changeRoom(event Event, c *Client) error {
 
 		c.egress <- sendEvent
 	}
-
-	c.chatroom = roomEvent.Room
 	return nil
 }
 

@@ -10,6 +10,13 @@ export type EventWs = {
   };
 };
 
+export type ChangeRoom = {
+  type: string;
+  payload: {
+    room: string;
+  };
+};
+
 export type Chat = {
   message: string;
   from: string;

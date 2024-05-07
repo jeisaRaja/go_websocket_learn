@@ -76,7 +76,6 @@ func (q *Queries) LoadChats(room string) ([]models.Chat, error) {
 			fmt.Println("Error when scanning row: ", err)
 			return chats, err
 		}
-		fmt.Println(chat.Sent)
 		chats = append(chats, chat)
 	}
 	return chats, nil

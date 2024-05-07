@@ -1,4 +1,4 @@
-import { EventWs, UserAuth } from "./type";
+import { ChangeRoom, EventWs, UserAuth } from "./type";
 
 export function newEventWs(
   type: string,
@@ -9,6 +9,13 @@ export function newEventWs(
   return {
     type,
     payload: { message, room, from_name },
+  };
+}
+
+export function newChangeRoomWs(room: string): ChangeRoom {
+  return {
+    type: "change_room",
+    payload: { room },
   };
 }
 
