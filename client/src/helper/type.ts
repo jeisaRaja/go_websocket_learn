@@ -1,11 +1,21 @@
 export type EventWs = {
-  type: string
+  type: string;
   payload: {
-    message: string
-    from: string
-  }
-}
+    id?: string;
+    message: string;
+    room: string;
+    from_id?: string;
+    from_name: string;
+    sent?: Date;
+  };
+};
+
+export type Chat = {
+  message: string;
+  from: string;
+  sent: Date;
+};
 
 export type UserAuth = {
-  username: string
-}
+  username: string;
+};

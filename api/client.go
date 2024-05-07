@@ -96,6 +96,5 @@ func (c *Client) writeMessages() {
 }
 
 func (c *Client) pongHandler(pongMsg string) error {
-	log.Println("pong")
 	return c.connection.SetReadDeadline(time.Now().Add(pongWait))
 }

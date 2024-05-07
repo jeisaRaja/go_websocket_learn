@@ -34,8 +34,9 @@ func (q *Queries) GetUserPassword(username string) *[]byte {
 
 func (q *Queries) InsertChat(chat *models.Chat) error {
 	query := "INSERT INTO chats (id, message, room, from_user,sent) VALUES ($1,$2,$3,$4,$5)"
-	fromID, err := q.GetUserID(chat.From)
+	fromID, err := q.GetUserID(chat.FromName)
 	if err != nil {
+		fmt.Println("insert query ", err.Error())
 		return err
 	}
 	_, err = q.DB.Exec(query, chat.ID, chat.Message, chat.Room, fromID, chat.Sent)
@@ -59,7 +60,10 @@ func (q *Queries) GetUserID(username string) (string, error) {
 }
 
 func (q *Queries) LoadChats(room string) ([]models.Chat, error) {
-	query := "SELECT id, message, from_user, sent, room FROM chats WHERE room = $1"
+	query := `SELECT chats.id, chats.message, chats.room, chats.from_user, chats.sent, users.username AS from_user_name
+  FROM chats
+  JOIN users ON chats.from_user = users.id
+  WHERE chats.room = $1;`
 	var chats []models.Chat
 	result, err := q.DB.Query(query, room)
 	if err != nil {
@@ -68,10 +72,11 @@ func (q *Queries) LoadChats(room string) ([]models.Chat, error) {
 	defer result.Close()
 	for result.Next() {
 		var chat models.Chat
-		if err := result.Scan(&chat.ID, &chat.Message, &chat.From, &chat.Sent, &chat.From); err != nil {
+		if err := result.Scan(&chat.ID, &chat.Message, &chat.Room, &chat.FromID, &chat.Sent, &chat.FromName); err != nil {
 			fmt.Println("Error when scanning row: ", err)
 			return chats, err
 		}
+		fmt.Println(chat.Sent)
 		chats = append(chats, chat)
 	}
 	return chats, nil

@@ -1,10 +1,13 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { newEventWs, newUser } from "../helper/objectFactories";
-import { EventWs, UserAuth } from "../helper/type";
+import { Chat as ChatType, EventWs, UserAuth } from "../helper/type";
+import { scrollToBottom } from "../helper/autoScroll";
+import Chat from "../components/Chat";
 
 const Home = () => {
-  const textArea = useRef<HTMLTextAreaElement | null>(null);
+  const messageArea = useRef<HTMLDivElement | null>(null);
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Array<ChatType>>([]);
   const [chatroom, setChatroom] = useState("general");
   const [inputChatroom, setInputChatroom] = useState("");
   const [conn, setConn] = useState<null | WebSocket>(null);
@@ -25,7 +28,6 @@ const Home = () => {
     });
     if (res.status === 200) {
       const resData = await res.json();
-      alert(resData);
       const user = newUser(username);
       setOTP(resData.data.otp);
       setAuth(user);
@@ -33,21 +35,21 @@ const Home = () => {
   };
 
   const routeEvent = (event: EventWs) => {
-    console.log(event);
     if (event.type === undefined) {
       return;
     }
     switch (event.type) {
       case "new_message":
-        console.log("new_message", event.payload);
-        if (textArea.current) {
-          const currVal = textArea.current.value;
-          textArea.current.value =
-            currVal +
-            "\n" +
-            event.payload.message +
-            " \n -" +
-            event.payload.from;
+        if (messageArea.current) {
+          if (!event.payload.sent) {
+            return;
+          }
+          const newMessage: ChatType = {
+            message: event.payload.message,
+            from: event.payload.from_name,
+            sent: event.payload.sent,
+          };
+          setMessages((prev) => [...prev, newMessage]);
         }
         break;
       default:
@@ -60,9 +62,8 @@ const Home = () => {
     if (!conn) {
       return;
     }
-    const eventData = newEventWs(type, message, username);
+    const eventData = newEventWs(type, message, chatroom, username);
     const jsonData = JSON.stringify(eventData);
-    console.log(jsonData);
     conn.send(jsonData);
   };
 
@@ -94,6 +95,10 @@ const Home = () => {
   const isWebSocketSupported = "WebSocket" in window;
 
   useEffect(() => {
+    scrollToBottom("messagearea");
+  }, [messages]);
+
+  useEffect(() => {
     if (
       isWebSocketSupported &&
       conn === null &&
@@ -111,14 +116,14 @@ const Home = () => {
   useEffect(() => {
     if (conn) {
       const handleMessage = (ev: MessageEvent) => {
-        if (ev.type === "ping") {
-          console.log("ping received");
-        }
+        //if (ev.type === "ping") {
+        // console.log("ping received");
+        //}
+        console.log(ev.data);
         const eventData = JSON.parse(ev.data) as EventWs;
         routeEvent(eventData);
       };
       conn.onmessage = handleMessage;
-      console.log("message");
       return () => {
         conn.onmessage = null;
       };
@@ -180,16 +185,15 @@ const Home = () => {
         />
       </form>
 
-      <textarea
-        name="messagearea"
+      <div
         id="messagearea"
-        cols={30}
-        rows={10}
-        placeholder="welcome to chatgo"
-        readOnly
-        className="p-3"
-        ref={textArea}
-      ></textarea>
+        className="w-full p-3 flex flex-col h-[400px] overflow-y-auto"
+        ref={messageArea}
+      >
+        {messages.map((item) => (
+          <Chat msg={item.message} uname={item.from} sent={item.sent} />
+        ))}
+      </div>
 
       <form
         onSubmit={(e) => onMessageSubmit(e)}

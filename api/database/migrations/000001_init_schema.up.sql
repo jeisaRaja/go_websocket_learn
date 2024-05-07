@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS chats (
     message TEXT NOT NULL,
     room VARCHAR(255) DEFAULT 'general',
     from_user UUID NOT NULL,
-    sent TIME DEFAULT CURRENT_TIME,
+    sent TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (from_user) REFERENCES users(id)
 );
 

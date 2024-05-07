@@ -121,6 +121,7 @@ func sendMessage(event Event, c *Client) error {
 		return fmt.Errorf("bad payload: %v", err)
 	}
 
+	fmt.Println(msgEvent)
 	msgEvent.Room = c.chatroom
 	msgEvent.Sent = time.Now()
 	msgEvent.ID = uuid.New()
@@ -150,9 +151,29 @@ func sendMessage(event Event, c *Client) error {
 func changeRoom(event Event, c *Client) error {
 	var roomEvent ChangeRoomEvent
 	err := json.Unmarshal(event.Payload, &roomEvent)
+
 	if err != nil {
 		return fmt.Errorf("bad payload")
 	}
+
+	chats, err := c.manager.DB.LoadChats(roomEvent.Room)
+	fmt.Println(chats)
+	if err != nil {
+		return err
+	}
+
+	for _, chat := range chats {
+		jsonChat, err := json.Marshal(chat)
+		if err != nil {
+			return err
+		}
+		var sendEvent Event
+		sendEvent.Payload = jsonChat
+		sendEvent.Type = EventNewMessage
+
+		c.egress <- sendEvent
+	}
+
 	c.chatroom = roomEvent.Room
 	return nil
 }
