@@ -114,6 +114,11 @@ func (m *Manager) setupEventHandlers() {
 	m.handlers[EventChangeRoom] = changeRoom
 }
 
+func announceJoinRoom(c *Client) error {
+  var ann models.JoinRoom
+	return nil
+}
+
 func sendMessage(event Event, c *Client) error {
 	var msgEvent models.Chat
 	if err := json.Unmarshal(event.Payload, &msgEvent); err != nil {
