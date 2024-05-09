@@ -54,6 +54,7 @@ func NewManager(ctx context.Context, db *database.Queries) *Manager {
 
 func (m *Manager) serveWs(w http.ResponseWriter, r *http.Request) {
 	otp := r.URL.Query().Get("otp")
+	username := r.URL.Query().Get("u")
 	if otp == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		log.Println("unauthorized!")
@@ -68,7 +69,7 @@ func (m *Manager) serveWs(w http.ResponseWriter, r *http.Request) {
 		log.Println((err))
 		return
 	}
-	client := NewClient(conn, m)
+	client := NewClient(conn, m, username)
 	m.addClient(client)
 
 	chats, err := m.DB.LoadChats("general")
@@ -115,7 +116,23 @@ func (m *Manager) setupEventHandlers() {
 }
 
 func announceJoinRoom(c *Client) error {
-  var ann models.JoinRoom
+	var ann JoinRoom
+	ann.Username = c.username
+	ann.Room = c.chatroom
+
+	data, err := json.Marshal(ann)
+	if err != nil {
+		return err
+	}
+	var event Event
+	event.Type = EventAnnounce
+	event.Payload = data
+
+	for client := range c.manager.clients {
+		if client.chatroom == c.chatroom {
+			client.egress <- event
+		}
+	}
 	return nil
 }
 

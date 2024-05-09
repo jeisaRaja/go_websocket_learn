@@ -15,6 +15,7 @@ type Client struct {
 	manager    *Manager
 	egress     chan Event
 	chatroom   string
+	username   string
 }
 
 var (
@@ -22,12 +23,13 @@ var (
 	pingInterval = 5 * time.Second
 )
 
-func NewClient(ws *websocket.Conn, manager *Manager) *Client {
+func NewClient(ws *websocket.Conn, manager *Manager, username string) *Client {
 	return &Client{
 		connection: ws,
 		manager:    manager,
 		egress:     make(chan Event),
 		chatroom:   "general",
+		username:   username,
 	}
 }
 

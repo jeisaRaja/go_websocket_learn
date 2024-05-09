@@ -15,7 +15,4 @@ type Chat struct {
 	Sent     time.Time `json:"sent" db:"sent"`
 }
 
-type JoinRoom struct {
-	Username string `json:"username"`
-	Room     string `json:"room"`
-}
+
