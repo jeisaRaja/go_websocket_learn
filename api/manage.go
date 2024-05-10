@@ -120,6 +120,7 @@ func announceJoinRoom(c *Client) error {
 	ann.Username = c.username
 	ann.Room = c.chatroom
 
+  fmt.Println(ann)
 	data, err := json.Marshal(ann)
 	if err != nil {
 		return err
@@ -133,6 +134,7 @@ func announceJoinRoom(c *Client) error {
 			client.egress <- event
 		}
 	}
+  fmt.Println("sending announce join room")
 	return nil
 }
 
@@ -142,7 +144,6 @@ func sendMessage(event Event, c *Client) error {
 		return fmt.Errorf("bad payload: %v", err)
 	}
 
-	fmt.Println(msgEvent)
 	msgEvent.Room = c.chatroom
 	msgEvent.Sent = time.Now()
 	msgEvent.ID = uuid.New()
@@ -177,10 +178,14 @@ func changeRoom(event Event, c *Client) error {
 		return fmt.Errorf("bad payload")
 	}
 
-	fmt.Println(roomEvent)
 	c.chatroom = roomEvent.Room
 
 	chats, err := c.manager.DB.LoadChats(roomEvent.Room)
+	if err != nil {
+		return err
+	}
+
+	err = announceJoinRoom(c)
 	if err != nil {
 		return err
 	}

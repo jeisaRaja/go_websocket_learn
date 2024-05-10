@@ -56,6 +56,10 @@ const Home = () => {
           setMessages((prev) => [...prev, newMessage]);
         }
         break;
+      case "announce":
+        console.log("this is the announce message")
+        console.log(event.payload)
+        break;
       default:
         console.log("unsupported message type");
         break;
@@ -123,7 +127,7 @@ const Home = () => {
       OTP !== undefined
     ) {
       console.log("new websocket");
-      setConn(() => new WebSocket(`ws://localhost:5000/ws?otp=${OTP}`));
+      setConn(() => new WebSocket(`ws://localhost:5000/ws?otp=${OTP}&u=${username}`));
     }
     return () => {
       conn?.close();
@@ -133,9 +137,7 @@ const Home = () => {
   useEffect(() => {
     if (conn) {
       const handleMessage = (ev: MessageEvent) => {
-        //if (ev.type === "ping") {
-        // console.log("ping received");
-        //}
+        console.log(ev)
         const eventData = JSON.parse(ev.data) as EventWs;
         routeEvent(eventData);
       };
