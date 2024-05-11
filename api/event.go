@@ -34,6 +34,6 @@ type ChangeRoomEvent struct {
 }
 
 type JoinRoom struct {
-	Username string `json:"username"`
-	Room     string `json:"room"`
+	Room   string   `json:"room"`
+	Member []string `json:"member"`
 }

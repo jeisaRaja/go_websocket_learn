@@ -4,7 +4,12 @@ import {
   newEventWs,
   newUser,
 } from "../helper/objectFactories";
-import { Chat as ChatType, EventWs, UserAuth } from "../helper/type";
+import {
+  Chat as ChatType,
+  EventWs,
+  NewMessagePayload,
+  UserAuth,
+} from "../helper/type";
 import { scrollToBottom } from "../helper/autoScroll";
 import Chat from "../components/Chat";
 
@@ -14,6 +19,7 @@ const Home = () => {
   const [messages, setMessages] = useState<Array<ChatType>>([]);
   const [chatroom, setChatroom] = useState("general");
   const [inputChatroom, setInputChatroom] = useState("");
+  const [members, setMembers] = useState<Array<string>>([]);
   const [conn, setConn] = useState<null | WebSocket>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -45,20 +51,18 @@ const Home = () => {
     switch (event.type) {
       case "new_message":
         if (messageArea.current) {
-          if (!event.payload.sent) {
-            return;
-          }
+          const payload = event.payload as NewMessagePayload;
           const newMessage: ChatType = {
-            message: event.payload.message,
-            from: event.payload.from_name,
-            sent: event.payload.sent,
+            message: payload.message,
+            from: payload.from_name,
+            sent: payload.sent,
           };
           setMessages((prev) => [...prev, newMessage]);
         }
         break;
       case "announce":
-        console.log("this is the announce message")
-        console.log(event.payload)
+        console.log("this is the announce message");
+        console.log(event.payload);
         break;
       default:
         console.log("unsupported message type");
@@ -108,7 +112,7 @@ const Home = () => {
       return;
     }
     sendMessage("change_room", inputChatroom);
-    setMessages([])
+    setMessages([]);
     setChatroom(inputChatroom);
     setInputChatroom("");
   };
@@ -127,17 +131,19 @@ const Home = () => {
       OTP !== undefined
     ) {
       console.log("new websocket");
-      setConn(() => new WebSocket(`ws://localhost:5000/ws?otp=${OTP}&u=${username}`));
+      setConn(
+        () => new WebSocket(`ws://localhost:5000/ws?otp=${OTP}&u=${username}`),
+      );
     }
     return () => {
       conn?.close();
     };
-  }, [conn, isWebSocketSupported, auth, OTP]);
+  }, [conn, isWebSocketSupported, auth, OTP, username]);
 
   useEffect(() => {
     if (conn) {
       const handleMessage = (ev: MessageEvent) => {
-        console.log(ev)
+        console.log(ev);
         const eventData = JSON.parse(ev.data) as EventWs;
         routeEvent(eventData);
       };
@@ -203,14 +209,22 @@ const Home = () => {
         />
       </form>
 
-      <div
-        id="messagearea"
-        className="w-full p-3 flex flex-col h-[400px] overflow-y-auto"
-        ref={messageArea}
-      >
-        {messages.map((item) => (
-          <Chat msg={item.message} uname={item.from} sent={item.sent} />
-        ))}
+      <div className="flex w-full p-10">
+        <div
+          id="messagearea"
+          className="w-full p-3 flex flex-col h-[400px] overflow-y-auto"
+          ref={messageArea}
+        >
+          {messages.map((item) => (
+            <Chat msg={item.message} uname={item.from} sent={item.sent} />
+          ))}
+        </div>
+        <div className="w-full">
+          <h1>Members</h1>
+          {members.map((m) => (
+            <p>{m}</p>
+          ))}
+        </div>
       </div>
 
       <form

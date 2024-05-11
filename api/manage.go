@@ -37,6 +37,7 @@ type Manager struct {
 	otps     OTPMap
 	DB       *database.Queries
 	Validate *validator.Validate
+	RoomMap  models.RoomMap
 }
 
 func NewManager(ctx context.Context, db *database.Queries) *Manager {
@@ -47,6 +48,7 @@ func NewManager(ctx context.Context, db *database.Queries) *Manager {
 		otps:     NewOTPMap(ctx, 20*time.Second),
 		DB:       db,
 		Validate: validate,
+		RoomMap:  models.RoomMap{},
 	}
 	m.setupEventHandlers()
 	return m
@@ -91,6 +93,10 @@ func (m *Manager) serveWs(w http.ResponseWriter, r *http.Request) {
 
 		client.egress <- sendEvent
 	}
+	err = announceJoinRoom(client)
+	if err != nil {
+		return
+	}
 }
 
 func (m *Manager) addClient(client *Client) {
@@ -117,10 +123,9 @@ func (m *Manager) setupEventHandlers() {
 
 func announceJoinRoom(c *Client) error {
 	var ann JoinRoom
-	ann.Username = c.username
+  c.manager.RoomMap[c.chatroom] = append(c.manager.RoomMap[c.chatroom], c.username)
 	ann.Room = c.chatroom
-
-  fmt.Println(ann)
+  ann.Member = c.manager.RoomMap[c.chatroom]
 	data, err := json.Marshal(ann)
 	if err != nil {
 		return err
@@ -134,7 +139,7 @@ func announceJoinRoom(c *Client) error {
 			client.egress <- event
 		}
 	}
-  fmt.Println("sending announce join room")
+	fmt.Println("sending announce join room")
 	return nil
 }
 
