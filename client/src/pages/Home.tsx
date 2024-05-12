@@ -5,6 +5,7 @@ import {
   newUser,
 } from "../helper/objectFactories";
 import {
+  AnnouncementPayload,
   Chat as ChatType,
   EventWs,
   NewMessagePayload,
@@ -63,6 +64,10 @@ const Home = () => {
       case "announce":
         console.log("this is the announce message");
         console.log(event.payload);
+        if (messageArea.current) {
+          const payload = event.payload as AnnouncementPayload;
+          setMembers(payload.member);
+        }
         break;
       default:
         console.log("unsupported message type");

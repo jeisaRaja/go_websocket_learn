@@ -43,5 +43,6 @@ export type UserAuth = {
 };
 
 export type Announce = {
-  member: [];
+  room: string;
+  member: [string];
 };
