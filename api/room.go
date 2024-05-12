@@ -13,6 +13,7 @@ func changeRoom(event Event, c *Client) error {
 		return fmt.Errorf("bad payload")
 	}
 
+	c.manager.RoomMap[c.chatroom] = removeFromSlice(c.manager.RoomMap[c.chatroom], c.username)
 	c.chatroom = roomEvent.Room
 
 	chats, err := c.manager.DB.LoadChats(roomEvent.Room)
@@ -59,6 +60,15 @@ func addRoomMember(c *Client) error {
 			client.egress <- event
 		}
 	}
-	fmt.Println("sending announce join room")
+	fmt.Println("upate room member")
 	return nil
+}
+
+func removeFromSlice(slice []string, element string) []string {
+	for i, v := range slice {
+		if v == element {
+			return append(slice[:i], slice[i+1:]...)
+		}
+	}
+	return slice
 }
