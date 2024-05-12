@@ -1,0 +1,18 @@
+{
+  "name": "go_websocket_learn",
+  "version": "1.0.0",
+  "description": "This Chat App project focuses on learning WebSocket technology with Go for the backend and React for the frontend.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "fe": "cd client && npm run dev",
+    "be": "cd api && go run *.go",
+    "dev": "concurrently \"npm run fe\" \"npm run be\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
