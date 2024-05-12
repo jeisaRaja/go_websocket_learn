@@ -93,7 +93,7 @@ func (m *Manager) serveWs(w http.ResponseWriter, r *http.Request) {
 
 		client.egress <- sendEvent
 	}
-	err = announceJoinRoom(client)
+	err = addRoomMember(client)
 	if err != nil {
 		return
 	}
@@ -119,28 +119,6 @@ func (m *Manager) removeClient(client *Client) {
 func (m *Manager) setupEventHandlers() {
 	m.handlers[EventSendMessage] = sendMessage
 	m.handlers[EventChangeRoom] = changeRoom
-}
-
-func announceJoinRoom(c *Client) error {
-	var ann JoinRoom
-  c.manager.RoomMap[c.chatroom] = append(c.manager.RoomMap[c.chatroom], c.username)
-	ann.Room = c.chatroom
-  ann.Member = c.manager.RoomMap[c.chatroom]
-	data, err := json.Marshal(ann)
-	if err != nil {
-		return err
-	}
-	var event Event
-	event.Type = EventAnnounce
-	event.Payload = data
-
-	for client := range c.manager.clients {
-		if client.chatroom == c.chatroom {
-			client.egress <- event
-		}
-	}
-	fmt.Println("sending announce join room")
-	return nil
 }
 
 func sendMessage(event Event, c *Client) error {
@@ -171,40 +149,6 @@ func sendMessage(event Event, c *Client) error {
 		if client.chatroom == c.chatroom {
 			client.egress <- sendEvent
 		}
-	}
-	return nil
-}
-
-func changeRoom(event Event, c *Client) error {
-	var roomEvent ChangeRoomEvent
-	err := json.Unmarshal(event.Payload, &roomEvent)
-
-	if err != nil {
-		return fmt.Errorf("bad payload")
-	}
-
-	c.chatroom = roomEvent.Room
-
-	chats, err := c.manager.DB.LoadChats(roomEvent.Room)
-	if err != nil {
-		return err
-	}
-
-	err = announceJoinRoom(c)
-	if err != nil {
-		return err
-	}
-
-	for _, chat := range chats {
-		jsonChat, err := json.Marshal(chat)
-		if err != nil {
-			return err
-		}
-		var sendEvent Event
-		sendEvent.Payload = jsonChat
-		sendEvent.Type = EventNewMessage
-
-		c.egress <- sendEvent
 	}
 	return nil
 }
